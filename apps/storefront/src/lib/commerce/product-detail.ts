@@ -8,6 +8,8 @@ import type {
   MagentoProductDetailResult,
 } from "@/lib/magento/types/product-detail";
 
+import type { ConfigurableOption, ProductVariant } from "@/lib/commerce/types/product-detail";
+
 import type { ProductDetail, ProductGalleryImage } from "./types/product-detail";
 
 function mapMagentoProductDetail(product: MagentoProductDetail): ProductDetail {
@@ -46,6 +48,9 @@ function mapMagentoProductDetail(product: MagentoProductDetail): ProductDetail {
     description: product.description?.html ?? "",
     shortDescription: product.short_description?.html ?? "",
     gallery,
+
+    options: mapConfigurableOptions(product.configurable_options),
+    variants: mapProductVariants(product.variants),
   };
 }
 
@@ -64,4 +69,58 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
   }
 
   return mapMagentoProductDetail(product);
+}
+
+function mapConfigurableOptions(
+  options: MagentoProductDetail["configurable_options"],
+): ConfigurableOption[] {
+  return (options ?? [])
+    .map((option) => ({
+      id: option.uid,
+      code: option.attribute_code,
+      label: option.label,
+      position: option.position,
+
+      values: option.values.map((value) => ({
+        id: value.uid,
+        label: value.label,
+        valueIndex: value.value_index,
+        swatchValue: value.swatch_data?.value ?? null,
+      })),
+    }))
+    .sort((a, b) => a.position - b.position);
+}
+
+function mapProductVariants(variants: MagentoProductDetail["variants"]): ProductVariant[] {
+  return (variants ?? []).map((variant) => {
+    const product = variant.product;
+    const price = product.price_range.minimum_price;
+
+    return {
+      id: product.uid,
+      sku: product.sku,
+      name: product.name,
+
+      availability: product.stock_status === "IN_STOCK" ? "IN_STOCK" : "OUT_OF_STOCK",
+
+      price: {
+        regular: price.regular_price.value,
+        final: price.final_price.value,
+        currency: price.final_price.currency,
+      },
+
+      image: product.small_image
+        ? {
+            url: product.small_image.url,
+            alt: product.small_image.label?.trim() || product.name,
+          }
+        : null,
+
+      attributes: variant.attributes.map((attribute) => ({
+        code: attribute.code,
+        label: attribute.label,
+        valueIndex: attribute.value_index,
+      })),
+    };
+  });
 }

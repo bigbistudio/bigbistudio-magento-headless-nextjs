@@ -8,6 +8,7 @@ export const PRODUCT_DETAIL_QUERY = `
             }
         ) {
             items {
+                __typename
                 uid
                 sku
                 name
@@ -42,17 +43,71 @@ export const PRODUCT_DETAIL_QUERY = `
 
                 price_range {
                     minimum_price {
-                        regular_price {
-                            value
-                            currency
+                    regular_price {
+                        value
+                        currency
+                    }
+                    final_price {
+                        value
+                        currency
+                    }
+                    }
+                }
+
+                ... on ConfigurableProduct {
+                    configurable_options {
+                        uid
+                        attribute_code
+                        label
+                        position
+
+                        values {
+                            uid
+                            label
+                            value_index
+
+                            swatch_data {
+                                value
+                            }
                         }
-                        final_price {
-                            value
-                            currency
+                    }
+
+                    variants {
+                        attributes {
+                            uid
+                            code
+                            label
+                            value_index
+                        }
+
+                        product {
+                            __typename
+                            uid
+                            sku
+                            name
+                            stock_status
+
+                            price_range {
+                                minimum_price {
+                                    regular_price {
+                                        value
+                                        currency
+                                    }
+                                    final_price {
+                                        value
+                                        currency
+                                    }
+                                }
+                            }
+
+                            small_image {
+                                url
+                                label
+                            }
                         }
                     }
                 }
-            }    
+            }
         }
     }
 `;
